@@ -1,6 +1,6 @@
 # Deploy and Host Auto Ontology with Railway
 
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/auto-ontology-v1-semantic-layer?referralCode=20H68q)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/auto-ontology-v1-semantic-layer-for-ai-a?referralCode=20H68q)
 
 Auto Ontology is NVIDIA's open-source (Apache-2.0) semantic layer for AI agents: it builds an ontology over your relational databases and answers natural-language questions as SQL. This community template runs release 1.1.0 from NVIDIA's published images with the web UI, the authenticated API, the MCP server and a sample database, so the first question works after deploy.
 
