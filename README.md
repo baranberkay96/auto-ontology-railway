@@ -69,7 +69,7 @@ The template switches semantic compilation on at first boot so the sample works 
 
 **Models**
 
-All model settings live on Backend (Ingestion references them). Defaults are upstream's: `nvidia/nemotron-3-nano-30b-a3b` for chat, `nvidia/nemotron-3-embed-1b` for embeddings and `nvidia/llama-nemotron-rerank-vl-1b-v2` for reranking, all on NVIDIA's API catalog. `REASONING_*` and `NON_REASONING_*` accept any OpenAI-compatible endpoint (set `*_ENDPOINT`, `*_MODEL` and `*_API_KEY`). Embeddings and reranking expect NVIDIA NIM-compatible APIs, either hosted or self-hosted NIM. Keep the embedding model fixed after the first ingest; changing it needs a re-ingest. On HTTP 429/503, lower `LLM_MAX_INFLIGHT` (Backend) and `SEMANTIC_LLM_MAX_INFLIGHT` (Ingestion).
+All model settings live on Backend (Ingestion references them). Defaults: `nvidia/nemotron-nano-3-30b-a3b` for chat (upstream 1.1.0's `nvidia/nemotron-3-nano-30b-a3b` was retired on 2026-09-01 and returns HTTP 410), `nvidia/nemotron-3-embed-1b` for embeddings and `nvidia/llama-nemotron-rerank-vl-1b-v2` for reranking, all on NVIDIA's API catalog. `REASONING_*` and `NON_REASONING_*` accept any OpenAI-compatible endpoint (set `*_ENDPOINT`, `*_MODEL` and `*_API_KEY`). Embeddings and reranking expect NVIDIA NIM-compatible APIs, either hosted or self-hosted NIM. Keep the embedding model fixed after the first ingest; changing it needs a re-ingest. On HTTP 429/503, lower `LLM_MAX_INFLIGHT` (Backend) and `SEMANTIC_LLM_MAX_INFLIGHT` (Ingestion).
 
 **Scaling**
 

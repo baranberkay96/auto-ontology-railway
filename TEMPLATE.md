@@ -150,15 +150,15 @@ Create in this order. Values are entered exactly as shown (Railway resolves `${{
 | `INGESTION_SERVICE_URL` | `http://${{Ingestion.RAILWAY_PRIVATE_DOMAIN}}:3002` | Ingestion service on the private network (ingest and semantic compilation triggers). |
 | `DEFAULT_MODELS_API_KEY` | *(empty)* | **Required.** NVIDIA API key (nvapi-...), free from build.nvidia.com; used by every model below unless REASONING_API_KEY, NON_REASONING_API_KEY, EMBED_API_KEY or RERANK_API_KEY is set. Hosted endpoints are governed by NVIDIA's API trial terms. |
 | `DEFAULT_MODELS_ENDPOINT` | `https://integrate.api.nvidia.com/v1` | Shared default endpoint (OpenAI-compatible) for any model field left unset. |
-| `DEFAULT_MODELS_MODEL` | `nvidia/nemotron-3-nano-30b-a3b` | Shared default model for any model field left unset (upstream default). |
+| `DEFAULT_MODELS_MODEL` | `nvidia/nemotron-nano-3-30b-a3b` | Shared default model for any model field left unset (upstream 1.1.0's id was retired; see below). |
 | `REASONING_ENDPOINT` | `https://integrate.api.nvidia.com/v1` | Main chat / NL-to-SQL model endpoint. Any OpenAI-compatible chat endpoint works; set REASONING_API_KEY for another provider. |
-| `REASONING_MODEL` | `nvidia/nemotron-3-nano-30b-a3b` | Main chat / NL-to-SQL model (upstream default). |
+| `REASONING_MODEL` | `nvidia/nemotron-nano-3-30b-a3b` | Main chat / NL-to-SQL model (upstream 1.1.0's id was retired; see below). |
 | `NON_REASONING_ENDPOINT` | `https://integrate.api.nvidia.com/v1` | Lighter model endpoint (entity extraction). OpenAI-compatible; set NON_REASONING_API_KEY for another provider. |
-| `NON_REASONING_MODEL` | `nvidia/nemotron-3-nano-30b-a3b` | Lighter model (upstream default). |
+| `NON_REASONING_MODEL` | `nvidia/nemotron-nano-3-30b-a3b` | Lighter model (upstream 1.1.0's id was retired; see below). |
 | `EMBED_ENDPOINT` | `https://integrate.api.nvidia.com/v1` | Embedding endpoint (NVIDIA NIM API). Ingest and query must use the same model; changing it needs a re-ingest. |
 | `EMBED_MODEL` | `nvidia/nemotron-3-embed-1b` | Embedding model (upstream default; the vector table is created for 2048 dimensions). |
 | `RERANK_ENDPOINT` | `https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-vl-1b-v2/reranking` | Reranking endpoint (NVIDIA NIM reranking API). |
-| `RERANK_MODEL` | `nvidia/llama-nemotron-rerank-vl-1b-v2` | Reranking model (upstream default). |
+| `RERANK_MODEL` | `nvidia/llama-nemotron-rerank-vl-1b-v2` | Reranking model (upstream 1.1.0's id was retired; see below). |
 | `CONNECTION_STRINGS` | *(empty)* | Optional. Comma-separated source database URLs (postgresql://user:pass@host:5432/db, snowflake://..., ...). When set, connections come only from here and the Connections settings page is hidden. Leave empty to manage connections in the UI. |
 | `LLM_MAX_INFLIGHT` | `6` | Max concurrent model requests per process (0 = unbounded). 6 stays under the hosted endpoint's per-key concurrency; lower it if you see HTTP 429/503. |
 | `LLM_INVOKE_TIMEOUT_S` | `120` | Timeout per model call, in seconds. |
@@ -334,7 +334,7 @@ Prices: RAM $10/GB-month, vCPU $20/vCPU-month, volume $0.15/GB-month, egress $0.
 
 - **Not deployed yet; no Docker build or container run** this round (instruction: no Docker). Verified statically: registry manifests/configs/layers, upstream sources at the release commit, `sh -n`/`bash -n`, JSON, script tests with fakes, SQL against local PostgreSQL 15.
 - **nvcr.io from Railway:** anonymous pulls work from here; Railway pulling `nvcr.io/...:tag@sha256` (image services) and `FROM nvcr.io/...` (Ingestion build) is unverified. Fallback: build the images from `release/v1.1.0` (`d14214e9`) in repo services.
-- **Default chat model id:** `nvidia/nemotron-3-nano-30b-a3b` is upstream's default and has a build.nvidia.com page, but `https://integrate.api.nvidia.com/v1/models` lists `nvidia/nemotron-nano-3-30b-a3b` instead. Needs a real key to confirm; if the first ingest/compile logs "model not found", set `REASONING_MODEL`/`NON_REASONING_MODEL`/`DEFAULT_MODELS_MODEL` to an id from that list.
+- **Default chat model id (verified 2026-11-03):** upstream 1.1.0's `nvidia/nemotron-3-nano-30b-a3b` answers `410 Gone` ("reached its end of life on 2026-09-01"), so the template defaults to `nvidia/nemotron-nano-3-30b-a3b`, the id in `https://integrate.api.nvidia.com/v1/models`. The embedding and rerank ids still resolve.
 - **Trial rate limits:** ingest + compile of Chinook on a free key may hit 429s (the clients retry); the time to the first answer is unmeasured (estimate 5–20 min).
 - **IPv6-only (legacy) Railway environments:** Backend and Ingestion bind `0.0.0.0` (hardcoded upstream); private calls to them need the IPv4 records that new environments provide.
 - **Pre-deploy semantics:** Railway runs pre-deploy in a separate container from the service image; `prisma db push` there is unverified (upstream runs it as a Kubernetes Job the same way).

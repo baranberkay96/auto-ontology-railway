@@ -194,7 +194,7 @@
      "required": false
     },
     "DEFAULT_MODELS_MODEL": {
-     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "defaultValue": "nvidia/nemotron-nano-3-30b-a3b",
      "description": "Shared default model for any model field left unset (upstream default).",
      "required": false
     },
@@ -204,7 +204,7 @@
      "required": false
     },
     "REASONING_MODEL": {
-     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "defaultValue": "nvidia/nemotron-nano-3-30b-a3b",
      "description": "Main chat / NL-to-SQL model (upstream default).",
      "required": false
     },
@@ -214,7 +214,7 @@
      "required": false
     },
     "NON_REASONING_MODEL": {
-     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "defaultValue": "nvidia/nemotron-nano-3-30b-a3b",
      "description": "Lighter model (upstream default).",
      "required": false
     },
