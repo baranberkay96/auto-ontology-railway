@@ -1,0 +1,729 @@
+{
+ "name": "Auto Ontology v1 Semantic Layer for AI Agents",
+ "description": "Semantic layer and NL-to-SQL for AI agents: MCP server, API and web UI.",
+ "category": "AI/ML",
+ "tags": [
+  "auto-ontology",
+  "semantic-layer",
+  "text-to-sql",
+  "nl-to-sql",
+  "mcp",
+  "ai-agents",
+  "ontology",
+  "pgvector"
+ ],
+ "image": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/network.svg",
+ "upstream": {
+  "repo": "NVIDIA/auto-ontology",
+  "version": "1.1.0 (images built from branch release/v1.1.0 at d14214e930fcb5988178ad51bde7672e600827a7; main checked at 6c4fb71e20c1f9fc4b6059aa1c99f55b697d60b0)",
+  "images": {
+   "backend+ingestion": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b (amd64 sha256:ada247f0cc63cc454d7a0de619c2f3a0767272a56252f9606e3e5a6d80581563, built 2026-10-08)",
+   "frontend": "nvcr.io/nvidia/auto-ontology-frontend:1.1.0@sha256:c45cbd9a15169d159a5752ab054595773324393af9aac23acef9221fbe716b97 (amd64 sha256:95ec9069f70913934db5a6d513ead00cde657dd5e9b2d54b98127fb3b00d36ab, built 2026-10-08)",
+   "mcp": "nvcr.io/nvidia/auto-ontology-mcp:1.1.0@sha256:3b8f9e5703c99d6521a572f1c777c0723e0f377dfcd7d08df6ff03475cfcaa26 (amd64 sha256:8d41beb461b47d54ea4894c468791e5fac29b4e0e44735858b33a05a205af1d2, built 2026-10-08)",
+   "postgres": "ghcr.io/railwayapp-templates/postgres-ssl:18 (index sha256:4fc833b43d2aaf6ecc9b18615f5533602b723a32d0e2efe2dae8ca0f7217c863, PostgreSQL 18.6, pgvector 0.8.*)",
+   "sample-data": "ghcr.io/railwayapp-templates/postgres-ssl:18 + Chinook 1.4.5 (lerocha/chinook-database@7f67772, sha256 e3fde5c1...695e)"
+  },
+  "checked": "2026-11-03"
+ },
+ "services": {
+  "Frontend": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/network.svg",
+   "source": {
+    "image": "nvcr.io/nvidia/auto-ontology-frontend:1.1.0@sha256:c45cbd9a15169d159a5752ab054595773324393af9aac23acef9221fbe716b97"
+   },
+   "startCommand": null,
+   "preDeployCommand": "/bin/sh -c 'cd /app/migrate || exit 1; i=1; until sh prisma/migrate.sh; do if [ \"$i\" -ge 60 ]; then echo \"[railway] prisma schema sync failed 60 times, giving up\" >&2; exit 1; fi; echo \"[railway] prisma schema sync attempt $i failed (Postgres still starting?), retrying in 10 s\" >&2; i=$((i+1)); sleep 10; done'",
+   "healthcheckPath": "/api/health",
+   "healthcheckTimeout": 600,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": true,
+   "targetPort": 3000,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "PORT": {
+     "defaultValue": "3000",
+     "description": "Port the Next.js server listens on (public domain target, healthcheck).",
+     "required": false
+    },
+    "HOSTNAME": {
+     "defaultValue": "0.0.0.0",
+     "description": "Bind address of the Next.js server.",
+     "required": false
+    },
+    "APP_VERSION": {
+     "defaultValue": "1.1.0",
+     "description": "Version shown in the UI footer and logs.",
+     "required": false
+    },
+    "POSTGRES_HOST": {
+     "defaultValue": "${{Postgres.PGHOST}}",
+     "description": "Postgres private host (pgvector database for the catalog, auth tables and embeddings).",
+     "required": false
+    },
+    "POSTGRES_PORT": {
+     "defaultValue": "${{Postgres.PGPORT}}",
+     "description": "Postgres port.",
+     "required": false
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "${{Postgres.PGUSER}}",
+     "description": "Postgres user.",
+     "required": false
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{Postgres.PGPASSWORD}}",
+     "description": "Postgres password.",
+     "required": false
+    },
+    "POSTGRES_DATABASE": {
+     "defaultValue": "${{Postgres.PGDATABASE}}",
+     "description": "Database holding the public (Alembic), frontend (Prisma) and vdb (pgvector) schemas.",
+     "required": false
+    },
+    "PYTHON_API_URL": {
+     "defaultValue": "http://${{Backend.RAILWAY_PRIVATE_DOMAIN}}:3001",
+     "description": "Backend API on the private network (read at runtime by the route handlers).",
+     "required": false
+    },
+    "APP_URL": {
+     "defaultValue": "https://${{RAILWAY_PUBLIC_DOMAIN}}",
+     "description": "Public origin of the web app, required by Better Auth (sessions, CSRF, OAuth issuer, SSO callback). Change it when you add a custom domain.",
+     "required": false
+    },
+    "AUTH_SECRET": {
+     "defaultValue": "${{secret(48, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+     "description": "Better Auth signing secret, generated at deploy. Changing it signs everyone out.",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_ADMIN_EMAIL": {
+     "defaultValue": "admin@example.com",
+     "description": "Login email of the bootstrap admin, created (or reset) on every start. Change it to yours.",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_ADMIN_PASSWORD": {
+     "defaultValue": "${{secret(24, \"abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789\")}}",
+     "description": "Password of the bootstrap admin, generated at deploy and re-applied on every start (change it here and redeploy to rotate).",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_PUBLIC_URL": {
+     "defaultValue": "https://${{MCP Server.RAILWAY_PUBLIC_DOMAIN}}",
+     "description": "Public origin of the MCP server (without /mcp); OAuth tokens for MCP clients are bound to it. The MCP Server service references this value.",
+     "required": false
+    },
+    "NEXT_TELEMETRY_DISABLED": {
+     "defaultValue": "1",
+     "description": "No Next.js telemetry.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "15",
+     "description": "Seconds between SIGTERM and SIGKILL on redeploy.",
+     "required": false
+    }
+   },
+   "preDeployTimeoutSeconds": 900
+  },
+  "Backend": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/server.svg",
+   "source": {
+    "image": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b"
+   },
+   "startCommand": null,
+   "preDeployCommand": "/bin/sh -c 'cd /app || exit 1; i=1; until /usr/local/bin/entrypoint.sh migrate; do if [ \"$i\" -ge 60 ]; then echo \"[railway] alembic upgrade failed 60 times, giving up\" >&2; exit 1; fi; echo \"[railway] alembic upgrade attempt $i failed (Postgres still starting?), retrying in 10 s\" >&2; i=$((i+1)); sleep 10; done'",
+   "healthcheckPath": "/api/health",
+   "healthcheckTimeout": 600,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "PORT": {
+     "defaultValue": "3001",
+     "description": "Port Railway health-checks (the API server always listens on 0.0.0.0:3001). Never add a public domain: this service trusts the x-auto-ontology-user-id header from the Frontend.",
+     "required": false
+    },
+    "APP_VERSION": {
+     "defaultValue": "1.1.0",
+     "description": "Version shown in logs (matches the pinned image).",
+     "required": false
+    },
+    "POSTGRES_HOST": {
+     "defaultValue": "${{Postgres.PGHOST}}",
+     "description": "Postgres private host (pgvector database for the catalog, auth tables and embeddings).",
+     "required": false
+    },
+    "POSTGRES_PORT": {
+     "defaultValue": "${{Postgres.PGPORT}}",
+     "description": "Postgres port.",
+     "required": false
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "${{Postgres.PGUSER}}",
+     "description": "Postgres user.",
+     "required": false
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{Postgres.PGPASSWORD}}",
+     "description": "Postgres password.",
+     "required": false
+    },
+    "POSTGRES_DATABASE": {
+     "defaultValue": "${{Postgres.PGDATABASE}}",
+     "description": "Database holding the public (Alembic), frontend (Prisma) and vdb (pgvector) schemas.",
+     "required": false
+    },
+    "INGESTION_SERVICE_URL": {
+     "defaultValue": "http://${{Ingestion.RAILWAY_PRIVATE_DOMAIN}}:3002",
+     "description": "Ingestion service on the private network (ingest and semantic compilation triggers).",
+     "required": false
+    },
+    "DEFAULT_MODELS_API_KEY": {
+     "defaultValue": "",
+     "description": "Required. NVIDIA API key (nvapi-...), free from build.nvidia.com; used by every model below unless REASONING_API_KEY, NON_REASONING_API_KEY, EMBED_API_KEY or RERANK_API_KEY is set. Hosted endpoints are governed by NVIDIA's API trial terms.",
+     "required": true
+    },
+    "DEFAULT_MODELS_ENDPOINT": {
+     "defaultValue": "https://integrate.api.nvidia.com/v1",
+     "description": "Shared default endpoint (OpenAI-compatible) for any model field left unset.",
+     "required": false
+    },
+    "DEFAULT_MODELS_MODEL": {
+     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "description": "Shared default model for any model field left unset (upstream default).",
+     "required": false
+    },
+    "REASONING_ENDPOINT": {
+     "defaultValue": "https://integrate.api.nvidia.com/v1",
+     "description": "Main chat / NL-to-SQL model endpoint. Any OpenAI-compatible chat endpoint works; set REASONING_API_KEY for another provider.",
+     "required": false
+    },
+    "REASONING_MODEL": {
+     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "description": "Main chat / NL-to-SQL model (upstream default).",
+     "required": false
+    },
+    "NON_REASONING_ENDPOINT": {
+     "defaultValue": "https://integrate.api.nvidia.com/v1",
+     "description": "Lighter model endpoint (entity extraction). OpenAI-compatible; set NON_REASONING_API_KEY for another provider.",
+     "required": false
+    },
+    "NON_REASONING_MODEL": {
+     "defaultValue": "nvidia/nemotron-3-nano-30b-a3b",
+     "description": "Lighter model (upstream default).",
+     "required": false
+    },
+    "EMBED_ENDPOINT": {
+     "defaultValue": "https://integrate.api.nvidia.com/v1",
+     "description": "Embedding endpoint (NVIDIA NIM API). Ingest and query must use the same model; changing it needs a re-ingest.",
+     "required": false
+    },
+    "EMBED_MODEL": {
+     "defaultValue": "nvidia/nemotron-3-embed-1b",
+     "description": "Embedding model (upstream default; the vector table is created for 2048 dimensions).",
+     "required": false
+    },
+    "RERANK_ENDPOINT": {
+     "defaultValue": "https://ai.api.nvidia.com/v1/retrieval/nvidia/llama-nemotron-rerank-vl-1b-v2/reranking",
+     "description": "Reranking endpoint (NVIDIA NIM reranking API).",
+     "required": false
+    },
+    "RERANK_MODEL": {
+     "defaultValue": "nvidia/llama-nemotron-rerank-vl-1b-v2",
+     "description": "Reranking model (upstream default).",
+     "required": false
+    },
+    "CONNECTION_STRINGS": {
+     "defaultValue": "",
+     "description": "Optional. Comma-separated source database URLs (postgresql://user:pass@host:5432/db, snowflake://..., ...). When set, connections come only from here and the Connections settings page is hidden. Leave empty to manage connections in the UI.",
+     "required": false
+    },
+    "LLM_MAX_INFLIGHT": {
+     "defaultValue": "6",
+     "description": "Max concurrent model requests per process (0 = unbounded). 6 stays under the hosted endpoint's per-key concurrency; lower it if you see HTTP 429/503.",
+     "required": false
+    },
+    "LLM_INVOKE_TIMEOUT_S": {
+     "defaultValue": "120",
+     "description": "Timeout per model call, in seconds.",
+     "required": false
+    },
+    "OMP_NUM_THREADS": {
+     "defaultValue": "4",
+     "description": "Caps native thread pools (numpy, onnxruntime) to the service's CPU share instead of the host's core count.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "30",
+     "description": "Seconds between SIGTERM and SIGKILL on redeploy (lets running chat turns finish).",
+     "required": false
+    }
+   },
+   "preDeployTimeoutSeconds": 900
+  },
+  "Ingestion": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/database-zap.svg",
+   "source": {
+    "repo": "baranberkay96/auto-ontology-railway",
+    "rootDirectory": "/services/ingestion"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": "/health",
+   "healthcheckTimeout": 1200,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "AUTO_ONTOLOGY_IMAGE": {
+     "defaultValue": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b",
+     "description": "Base image for this service's Docker build (Railway passes it as a build argument). Must match the Backend service's image.",
+     "required": false
+    },
+    "PORT": {
+     "defaultValue": "3002",
+     "description": "Port Railway health-checks.",
+     "required": false
+    },
+    "INGESTION_PORT": {
+     "defaultValue": "3002",
+     "description": "Port the ingestion service listens on (0.0.0.0, private network only).",
+     "required": false
+    },
+    "APP_VERSION": {
+     "defaultValue": "1.1.0",
+     "description": "Version shown in logs (matches the pinned image).",
+     "required": false
+    },
+    "POSTGRES_HOST": {
+     "defaultValue": "${{Postgres.PGHOST}}",
+     "description": "Postgres private host (pgvector database for the catalog, auth tables and embeddings).",
+     "required": false
+    },
+    "POSTGRES_PORT": {
+     "defaultValue": "${{Postgres.PGPORT}}",
+     "description": "Postgres port.",
+     "required": false
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "${{Postgres.PGUSER}}",
+     "description": "Postgres user.",
+     "required": false
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{Postgres.PGPASSWORD}}",
+     "description": "Postgres password.",
+     "required": false
+    },
+    "POSTGRES_DATABASE": {
+     "defaultValue": "${{Postgres.PGDATABASE}}",
+     "description": "Database holding the public (Alembic), frontend (Prisma) and vdb (pgvector) schemas.",
+     "required": false
+    },
+    "DEFAULT_MODELS_API_KEY": {
+     "defaultValue": "${{Backend.DEFAULT_MODELS_API_KEY}}",
+     "description": "Same as DEFAULT_MODELS_API_KEY on Backend (change it there).",
+     "required": false
+    },
+    "DEFAULT_MODELS_ENDPOINT": {
+     "defaultValue": "${{Backend.DEFAULT_MODELS_ENDPOINT}}",
+     "description": "Same as DEFAULT_MODELS_ENDPOINT on Backend (change it there).",
+     "required": false
+    },
+    "DEFAULT_MODELS_MODEL": {
+     "defaultValue": "${{Backend.DEFAULT_MODELS_MODEL}}",
+     "description": "Same as DEFAULT_MODELS_MODEL on Backend (change it there).",
+     "required": false
+    },
+    "REASONING_ENDPOINT": {
+     "defaultValue": "${{Backend.REASONING_ENDPOINT}}",
+     "description": "Same as REASONING_ENDPOINT on Backend (change it there).",
+     "required": false
+    },
+    "REASONING_MODEL": {
+     "defaultValue": "${{Backend.REASONING_MODEL}}",
+     "description": "Same as REASONING_MODEL on Backend (change it there).",
+     "required": false
+    },
+    "NON_REASONING_ENDPOINT": {
+     "defaultValue": "${{Backend.NON_REASONING_ENDPOINT}}",
+     "description": "Same as NON_REASONING_ENDPOINT on Backend (change it there).",
+     "required": false
+    },
+    "NON_REASONING_MODEL": {
+     "defaultValue": "${{Backend.NON_REASONING_MODEL}}",
+     "description": "Same as NON_REASONING_MODEL on Backend (change it there).",
+     "required": false
+    },
+    "EMBED_ENDPOINT": {
+     "defaultValue": "${{Backend.EMBED_ENDPOINT}}",
+     "description": "Same as EMBED_ENDPOINT on Backend (change it there).",
+     "required": false
+    },
+    "EMBED_MODEL": {
+     "defaultValue": "${{Backend.EMBED_MODEL}}",
+     "description": "Same as EMBED_MODEL on Backend (change it there).",
+     "required": false
+    },
+    "RERANK_ENDPOINT": {
+     "defaultValue": "${{Backend.RERANK_ENDPOINT}}",
+     "description": "Same as RERANK_ENDPOINT on Backend (change it there).",
+     "required": false
+    },
+    "RERANK_MODEL": {
+     "defaultValue": "${{Backend.RERANK_MODEL}}",
+     "description": "Same as RERANK_MODEL on Backend (change it there).",
+     "required": false
+    },
+    "CONNECTION_STRINGS": {
+     "defaultValue": "${{Backend.CONNECTION_STRINGS}}",
+     "description": "Same as CONNECTION_STRINGS on Backend (change it there).",
+     "required": false
+    },
+    "LLM_MAX_INFLIGHT": {
+     "defaultValue": "${{Backend.LLM_MAX_INFLIGHT}}",
+     "description": "Same as LLM_MAX_INFLIGHT on Backend.",
+     "required": false
+    },
+    "LLM_INVOKE_TIMEOUT_S": {
+     "defaultValue": "${{Backend.LLM_INVOKE_TIMEOUT_S}}",
+     "description": "Same as LLM_INVOKE_TIMEOUT_S on Backend.",
+     "required": false
+    },
+    "SEMANTIC_LLM_MAX_INFLIGHT": {
+     "defaultValue": "6",
+     "description": "Concurrent model calls during semantic compilation (upstream default 6). Lower it on rate-limited keys.",
+     "required": false
+    },
+    "PII_LLM_MAX_WORKERS": {
+     "defaultValue": "6",
+     "description": "Concurrent model calls for PII classification, when enabled in Settings (upstream default 6).",
+     "required": false
+    },
+    "OMP_NUM_THREADS": {
+     "defaultValue": "4",
+     "description": "Caps native thread pools (numpy, onnxruntime) to the service's CPU share instead of the host's core count.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_CONNECTION": {
+     "defaultValue": "true",
+     "description": "On the first boot of a fresh catalog, register the Chinook database on Sample Data as a normal connection (removable in Settings -> Connections). Runs once; false skips it.",
+     "required": false
+    },
+    "TEMPLATE_ENABLE_SEMANTIC_COMPILATION": {
+     "defaultValue": "true",
+     "description": "On the first boot, switch Settings -> Semantic Compilation on (only if never set), so questions work without manual steps. It re-runs every 24 h over every connected database and uses model calls; turn it off in the UI anytime.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_DB_HOST": {
+     "defaultValue": "${{Sample Data.RAILWAY_PRIVATE_DOMAIN}}",
+     "description": "Sample Data private host.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_DB_PORT": {
+     "defaultValue": "${{Sample Data.PGPORT}}",
+     "description": "Sample Data port.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_DB_NAME": {
+     "defaultValue": "${{Sample Data.PGDATABASE}}",
+     "description": "Sample database name (chinook).",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_DB_USER": {
+     "defaultValue": "${{Sample Data.SAMPLE_DB_READER_USER}}",
+     "description": "Read-only login for the sample database.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_DB_PASSWORD": {
+     "defaultValue": "${{Sample Data.SAMPLE_DB_READER_PASSWORD}}",
+     "description": "Password of that login.",
+     "required": false
+    },
+    "TEMPLATE_STARTUP_WAIT_SECONDS": {
+     "defaultValue": "900",
+     "description": "Max seconds the start wrapper waits for the Backend migration (and the first-boot steps) before giving up; keep it below the healthcheck timeout.",
+     "required": false
+    },
+    "TEMPLATE_SAMPLE_WAIT_SECONDS": {
+     "defaultValue": "300",
+     "description": "Max seconds the first boot waits for Sample Data to accept connections.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "60",
+     "description": "Seconds between SIGTERM and SIGKILL on redeploy (schedulers stop cleanly).",
+     "required": false
+    }
+   }
+  },
+  "MCP Server": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/plug.svg",
+   "source": {
+    "image": "nvcr.io/nvidia/auto-ontology-mcp:1.1.0@sha256:3b8f9e5703c99d6521a572f1c777c0723e0f377dfcd7d08df6ff03475cfcaa26"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": "/.well-known/oauth-protected-resource/mcp",
+   "healthcheckTimeout": 300,
+   "restartPolicyType": "ALWAYS",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": true,
+   "targetPort": 3003,
+   "tcpProxy": null,
+   "volume": null,
+   "variables": {
+    "PORT": {
+     "defaultValue": "3003",
+     "description": "Port Railway health-checks (MCP endpoint is /mcp).",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_HOST": {
+     "defaultValue": "0.0.0.0",
+     "description": "Bind address of the MCP server.",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_PORT": {
+     "defaultValue": "3003",
+     "description": "Port of the MCP server (public domain target).",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_API_URL": {
+     "defaultValue": "${{Frontend.APP_URL}}",
+     "description": "Public Auto Ontology web app: the OAuth authorization server MCP clients sign in with, and the API every tool call goes through as the signed-in user.",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_PUBLIC_URL": {
+     "defaultValue": "${{Frontend.AUTO_ONTOLOGY_MCP_PUBLIC_URL}}",
+     "description": "This server's public origin (set on Frontend, so both always agree).",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_TIMEOUT_S": {
+     "defaultValue": "30",
+     "description": "Timeout for catalog and glossary API calls, in seconds.",
+     "required": false
+    },
+    "AUTO_ONTOLOGY_MCP_CHAT_TIMEOUT_S": {
+     "defaultValue": "900",
+     "description": "Timeout for one ask_question run (many model calls), in seconds.",
+     "required": false
+    }
+   }
+  },
+  "Postgres": {
+   "icon": "https://devicons.railway.app/i/postgresql.svg",
+   "source": {
+    "image": "ghcr.io/railwayapp-templates/postgres-ssl:18"
+   },
+   "startCommand": "/usr/bin/tini -g -- /bin/bash -c 'set -e; D=\"${PGDATA%/}\"; F=\"$D/pgvector-tuning.conf\"; C=\"$D/postgresql.conf\"; I=/docker-entrypoint-initdb.d; X=/tmp/pgvector-tuning.conf; echo \"CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_stat_statements;\" > $I/zz-pgvector-extensions.sql; k() { v=$1; if [ $v -lt $2 ]; then v=$2; fi; if [ $v -gt $3 ]; then v=$3; fi; echo $v; }; n() { case \"$1\" in \"\"|*[!0-9]*) echo $2 ;; *) echo $1 ;; esac; }; w() { echo \"$1 = $2\" >> $X; }; if [ \"${PGVECTOR_TUNING:-auto}\" = off ]; then rm -f $F $I/zz-pgvector-conf.sh; echo \"pgvector-tune: PGVECTOR_TUNING=off, Postgres defaults apply\"; else H=$(( $(n \"$(grep -m 1 MemTotal /proc/meminfo | tr -s \" \" | cut -d \" \" -f 2)\" 1048576) / 1024 )); M=$(( $(n \"$(cat /sys/fs/cgroup/memory.max 2>/dev/null)\" $((H * 1048576))) / 1048576 )); if [ $M -gt $H ]; then M=$H; fi; B=$(k $(n \"$PG_MEMORY_LIMIT_MB\" $(k $M 256 8192)) 256 4194304); N=$(nproc); read -r Q P 2>/dev/null < /sys/fs/cgroup/cpu.max || Q=max; case \"$Q\" in \"\"|*[!0-9]*) ;; *) N=$(k $(( (Q + P - 1) / P )) 1 $N) ;; esac; N=$(k $(n \"$PG_CPU_LIMIT\" $(k $N 1 8)) 1 256); S=$(( $(n \"$(df -Pk /dev/shm 2>/dev/null | tail -n 1 | tr -s \" \" | cut -d \" \" -f 2)\" 65536) / 1024 )); SB=$(k $((B / 4)) 128 1048576); MW=$(k $((B / 4)) 64 2048); PM=$(k $((N - 1)) 0 4); PW=$(k $N 2 256); PG=$(k $((N / 2)) 0 2); FIT=$((S * 3 / 4)); if [ $FIT -lt 128 ]; then PM=0; fi; if [ $PM -gt 0 ]; then MW=$(k $MW 64 $FIT); fi; if [ $S -lt 256 ]; then PG=0; fi; echo \"# pgvector template: rewritten at every boot from budget ${B}MB (container ${M}MB), ${N} cpus, /dev/shm ${S}MB; ALTER SYSTEM overrides it\" > $X; w shared_buffers ${SB}MB; w effective_cache_size $((B * 3 / 4))MB; w maintenance_work_mem ${MW}MB; w autovacuum_work_mem $(k $((B / 16)) 64 $MW)MB; w work_mem $(k $((B / 512)) 4 64)MB; w max_worker_processes $(k $((PW + 4)) 8 512); w max_parallel_workers $PW; w max_parallel_workers_per_gather $PG; w max_parallel_maintenance_workers $PM; w random_page_cost 1.1; w effective_io_concurrency 200; w track_io_timing on; chmod 644 $X; if [ -f $D/PG_VERSION ] && [ -f $C ]; then install -o postgres -g postgres -m 600 $X $F; grep -qsF \"include_if_exists = pgvector-tuning.conf\" $C || echo \"include_if_exists = pgvector-tuning.conf\" >> $C; sync $F $C 2>/dev/null || true; else echo \"cp $X $F && chmod 600 $F && { grep -qsF pgvector-tuning.conf $C || echo include_if_exists = pgvector-tuning.conf >> $C; }\" > $I/zz-pgvector-conf.sh; fi; echo \"pgvector-tune: $(paste -sd \" \" $X)\"; fi; exec /usr/local/bin/wrapper.sh \"$@\"' pgvector-start postgres -p 5432 -c listen_addresses=*",
+   "preDeployCommand": null,
+   "healthcheckPath": null,
+   "healthcheckTimeout": null,
+   "restartPolicyType": "ON_FAILURE",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": {
+    "mountPath": "/var/lib/postgresql/data"
+   },
+   "variables": {
+    "PGDATA": {
+     "defaultValue": "/var/lib/postgresql/data/pgdata",
+     "description": "Data directory inside the volume (Railway base layout; the image refuses anything outside /var/lib/postgresql/data).",
+     "required": true
+    },
+    "PGHOST": {
+     "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+     "description": "Private hostname of this database (postgres.railway.internal), used by the Data panel and the other services.",
+     "required": true
+    },
+    "PGPORT": {
+     "defaultValue": "5432",
+     "description": "Postgres port.",
+     "required": true
+    },
+    "PGUSER": {
+     "defaultValue": "${{POSTGRES_USER}}",
+     "description": "User for the Data panel and the other services.",
+     "required": true
+    },
+    "PGPASSWORD": {
+     "defaultValue": "${{POSTGRES_PASSWORD}}",
+     "description": "Password for the Data panel and the other services.",
+     "required": true
+    },
+    "PGDATABASE": {
+     "defaultValue": "${{POSTGRES_DB}}",
+     "description": "Database for the Data panel and the other services.",
+     "required": true
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "postgres",
+     "description": "Superuser created on first boot.",
+     "required": true
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+     "description": "Superuser password, generated at deploy (letters only: the app builds URLs from it without escaping). Changing it later needs ALTER USER too.",
+     "required": true
+    },
+    "POSTGRES_DB": {
+     "defaultValue": "railway",
+     "description": "Database created on first boot; the vector and pg_stat_statements extensions are created in it.",
+     "required": true
+    },
+    "DATABASE_URL": {
+     "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+     "description": "Private connection string (Railway convention).",
+     "required": false
+    },
+    "SSL_CERT_DAYS": {
+     "defaultValue": "820",
+     "description": "Validity of the self-signed TLS certificate.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "60",
+     "description": "Time Postgres gets to shut down cleanly on redeploy.",
+     "required": false
+    },
+    "RAILWAY_SHM_SIZE_BYTES": {
+     "defaultValue": "1073741824",
+     "description": "Size of /dev/shm (1 GiB; Railway default 64 MB) for parallel HNSW index builds and parallel queries; only memory in use is billed.",
+     "required": false
+    },
+    "PGVECTOR_TUNING": {
+     "defaultValue": "auto",
+     "description": "auto = size memory and parallelism from the container limits at every boot; off = Postgres defaults.",
+     "required": false
+    },
+    "PG_MEMORY_LIMIT_MB": {
+     "defaultValue": "auto",
+     "description": "RAM the tuning plans for. auto = the container limit capped at 8192 MB.",
+     "required": false
+    },
+    "PG_CPU_LIMIT": {
+     "defaultValue": "auto",
+     "description": "CPUs the tuning plans for. auto = the container CPU quota capped at 8.",
+     "required": false
+    }
+   },
+   "restartPolicyMaxRetries": 10
+  },
+  "Sample Data": {
+   "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/database.svg",
+   "source": {
+    "repo": "baranberkay96/auto-ontology-railway",
+    "rootDirectory": "/services/sample-data"
+   },
+   "startCommand": null,
+   "preDeployCommand": null,
+   "healthcheckPath": null,
+   "healthcheckTimeout": null,
+   "restartPolicyType": "ON_FAILURE",
+   "numReplicas": 1,
+   "cronSchedule": null,
+   "publicDomain": false,
+   "targetPort": null,
+   "tcpProxy": null,
+   "volume": {
+    "mountPath": "/var/lib/postgresql/data"
+   },
+   "variables": {
+    "PGDATA": {
+     "defaultValue": "/var/lib/postgresql/data/pgdata",
+     "description": "Data directory inside the volume (Railway base layout).",
+     "required": true
+    },
+    "PGHOST": {
+     "defaultValue": "${{RAILWAY_PRIVATE_DOMAIN}}",
+     "description": "Private hostname (sample-data.railway.internal).",
+     "required": true
+    },
+    "PGPORT": {
+     "defaultValue": "5432",
+     "description": "Postgres port.",
+     "required": true
+    },
+    "PGUSER": {
+     "defaultValue": "${{POSTGRES_USER}}",
+     "description": "User for the Data panel.",
+     "required": true
+    },
+    "PGPASSWORD": {
+     "defaultValue": "${{POSTGRES_PASSWORD}}",
+     "description": "Password for the Data panel.",
+     "required": true
+    },
+    "PGDATABASE": {
+     "defaultValue": "${{POSTGRES_DB}}",
+     "description": "Database the Data panel and Auto Ontology open (the Chinook sample).",
+     "required": true
+    },
+    "POSTGRES_USER": {
+     "defaultValue": "postgres",
+     "description": "Superuser created on first boot.",
+     "required": true
+    },
+    "POSTGRES_PASSWORD": {
+     "defaultValue": "${{ secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ\") }}",
+     "description": "Superuser password, generated at deploy.",
+     "required": true
+    },
+    "POSTGRES_DB": {
+     "defaultValue": "chinook",
+     "description": "Database created on first boot and filled with the Chinook sample (do not change after the first deploy).",
+     "required": true
+    },
+    "DATABASE_URL": {
+     "defaultValue": "postgresql://${{PGUSER}}:${{POSTGRES_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+     "description": "Superuser connection string (private network).",
+     "required": false
+    },
+    "SAMPLE_DB_READER_USER": {
+     "defaultValue": "ao_reader",
+     "description": "Read-only login created on first boot for Auto Ontology (SELECT on Chinook only).",
+     "required": false
+    },
+    "SAMPLE_DB_READER_PASSWORD": {
+     "defaultValue": "${{secret(32, \"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789\")}}",
+     "description": "Password of that login, generated at deploy; applied on first boot only.",
+     "required": false
+    },
+    "SAMPLE_DB_READER_STATEMENT_TIMEOUT": {
+     "defaultValue": "120s",
+     "description": "statement_timeout of the read-only login (protects the demo from runaway SQL).",
+     "required": false
+    },
+    "SAMPLE_DATABASE_URL": {
+     "defaultValue": "postgresql://${{SAMPLE_DB_READER_USER}}:${{SAMPLE_DB_READER_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:5432/${{PGDATABASE}}",
+     "description": "Read-only connection string for the sample (private network).",
+     "required": false
+    },
+    "SSL_CERT_DAYS": {
+     "defaultValue": "820",
+     "description": "Validity of the self-signed TLS certificate.",
+     "required": false
+    },
+    "RAILWAY_DEPLOYMENT_DRAINING_SECONDS": {
+     "defaultValue": "30",
+     "description": "Time Postgres gets to shut down cleanly on redeploy.",
+     "required": false
+    }
+   },
+   "restartPolicyMaxRetries": 10
+  }
+ }
+}
