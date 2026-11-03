@@ -49,7 +49,7 @@ Backend and Ingestion must stay private: the Backend trusts a user-id header set
 1. Paste your NVIDIA API key (`nvapi-...`) into `DEFAULT_MODELS_API_KEY` when deploying. Create one for free at build.nvidia.com.
 2. Wait until all services are healthy (first deploy: a few minutes for image pulls and builds).
 3. Open the Frontend URL. The login is `AUTO_ONTOLOGY_ADMIN_EMAIL` (default `admin@example.com`) and `AUTO_ONTOLOGY_ADMIN_PASSWORD` (generated), both on Frontend → Variables. To use your own email, change it there and redeploy Frontend.
-4. On first boot, Ingestion registers the `chinook` connection, ingests it and compiles the semantic layer (about 15 minutes in our test). Check Settings → Semantic Compilation for the first successful run. If the key was wrong or a model unavailable during that run, fix it, then use **Reset Semantic Layer** there: a failed run still counts as compiled.
+4. On first boot, Ingestion registers the `chinook` connection, ingests it and compiles the semantic layer (about 7 minutes in our test). Check Settings → Semantic Compilation for the first successful run. If the key was wrong or a model unavailable during that run, fix it, then use **Reset Semantic Layer** there: a failed run still counts as compiled.
 5. Ask in Chat: "Which artists have the most tracks?" A first answer took about 3 minutes in our test.
 
 Self-service sign-up is disabled, as it is upstream. Add people through Settings → SSO (redirect URI `https://{your-domain}/api/auth/sso/callback`), or as an admin through Better Auth's admin API. The admin password is re-applied on every start: rotate it by changing the variable and redeploying Frontend.
