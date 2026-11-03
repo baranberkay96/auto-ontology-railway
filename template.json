@@ -29,7 +29,8 @@
   "Frontend": {
    "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/network.svg",
    "source": {
-    "image": "nvcr.io/nvidia/auto-ontology-frontend:1.1.0@sha256:c45cbd9a15169d159a5752ab054595773324393af9aac23acef9221fbe716b97"
+    "repo": "baranberkay96/auto-ontology-railway",
+    "rootDirectory": "/services/frontend"
    },
    "startCommand": null,
    "preDeployCommand": "/bin/sh -c 'cd /app/migrate || exit 1; i=1; until sh prisma/migrate.sh; do if [ \"$i\" -ge 60 ]; then echo \"[railway] prisma schema sync failed 60 times, giving up\" >&2; exit 1; fi; echo \"[railway] prisma schema sync attempt $i failed (Postgres still starting?), retrying in 10 s\" >&2; i=$((i+1)); sleep 10; done'",
@@ -43,6 +44,11 @@
    "tcpProxy": null,
    "volume": null,
    "variables": {
+    "AUTO_ONTOLOGY_FRONTEND_IMAGE": {
+     "defaultValue": "nvcr.io/nvidia/auto-ontology-frontend:1.1.0@sha256:c45cbd9a15169d159a5752ab054595773324393af9aac23acef9221fbe716b97",
+     "required": false,
+     "description": "NVIDIA's the web app image this service's Docker build starts FROM (Railway passes it as a build argument). Upgrade all Auto Ontology services together."
+    },
     "PORT": {
      "defaultValue": "3000",
      "description": "Port the Next.js server listens on (public domain target, healthcheck).",
@@ -129,7 +135,8 @@
   "Backend": {
    "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/server.svg",
    "source": {
-    "image": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b"
+    "repo": "baranberkay96/auto-ontology-railway",
+    "rootDirectory": "/services/backend"
    },
    "startCommand": null,
    "preDeployCommand": "/bin/sh -c 'cd /app || exit 1; i=1; until /usr/local/bin/entrypoint.sh migrate; do if [ \"$i\" -ge 60 ]; then echo \"[railway] alembic upgrade failed 60 times, giving up\" >&2; exit 1; fi; echo \"[railway] alembic upgrade attempt $i failed (Postgres still starting?), retrying in 10 s\" >&2; i=$((i+1)); sleep 10; done'",
@@ -143,6 +150,11 @@
    "tcpProxy": null,
    "volume": null,
    "variables": {
+    "AUTO_ONTOLOGY_IMAGE": {
+     "defaultValue": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b",
+     "required": false,
+     "description": "NVIDIA's the backend + ingestion image this service's Docker build starts FROM (Railway passes it as a build argument). Upgrade all Auto Ontology services together."
+    },
     "PORT": {
      "defaultValue": "3001",
      "description": "Port Railway health-checks (the API server always listens on 0.0.0.0:3001). Never add a public domain: this service trusts the x-auto-ontology-user-id header from the Frontend.",
@@ -285,7 +297,7 @@
    "volume": null,
    "variables": {
     "AUTO_ONTOLOGY_IMAGE": {
-     "defaultValue": "nvcr.io/nvidia/auto-ontology:1.1.0@sha256:d6d50ee5fb3617dce218ea9706e737c181e3eb6afcaf15cd954364a341aef57b",
+     "defaultValue": "${{Backend.AUTO_ONTOLOGY_IMAGE}}",
      "description": "Base image for this service's Docker build (Railway passes it as a build argument). Must match the Backend service's image.",
      "required": false
     },
@@ -469,7 +481,8 @@
   "MCP Server": {
    "icon": "https://cdn.jsdelivr.net/npm/lucide-static@1.59.0/icons/plug.svg",
    "source": {
-    "image": "nvcr.io/nvidia/auto-ontology-mcp:1.1.0@sha256:3b8f9e5703c99d6521a572f1c777c0723e0f377dfcd7d08df6ff03475cfcaa26"
+    "repo": "baranberkay96/auto-ontology-railway",
+    "rootDirectory": "/services/mcp"
    },
    "startCommand": null,
    "preDeployCommand": null,
@@ -483,6 +496,11 @@
    "tcpProxy": null,
    "volume": null,
    "variables": {
+    "AUTO_ONTOLOGY_MCP_IMAGE": {
+     "defaultValue": "nvcr.io/nvidia/auto-ontology-mcp:1.1.0@sha256:3b8f9e5703c99d6521a572f1c777c0723e0f377dfcd7d08df6ff03475cfcaa26",
+     "required": false,
+     "description": "NVIDIA's the MCP server image this service's Docker build starts FROM (Railway passes it as a build argument). Upgrade all Auto Ontology services together."
+    },
     "PORT": {
      "defaultValue": "3003",
      "description": "Port Railway health-checks (MCP endpoint is /mcp).",

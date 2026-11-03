@@ -77,7 +77,7 @@ Frontend can run replicas. Scale Backend vertically: each concurrent chat turn r
 
 **Upgrades**
 
-All Auto Ontology images are pinned to 1.1.0 by digest. To upgrade, set the same new tag and digest on Backend, Frontend and MCP Server, and in `AUTO_ONTOLOGY_IMAGE` on Ingestion. Read the upstream changes, then deploy them together. Backend migrates the schema before it starts, and Ingestion waits for it. Never run mixed versions.
+All Auto Ontology images are pinned to 1.1.0 by digest; each service builds `FROM` NVIDIA's image unchanged. To upgrade, set the new tag and digest in `AUTO_ONTOLOGY_IMAGE` on Backend (Ingestion follows it), `AUTO_ONTOLOGY_FRONTEND_IMAGE` on Frontend and `AUTO_ONTOLOGY_MCP_IMAGE` on MCP Server. Read the upstream changes, then deploy them together. Backend migrates the schema before it starts, and Ingestion waits for it. Never run mixed versions.
 
 **Costs**
 
