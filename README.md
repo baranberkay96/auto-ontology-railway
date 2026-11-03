@@ -49,8 +49,8 @@ Backend and Ingestion must stay private: the Backend trusts a user-id header set
 1. Paste your NVIDIA API key (`nvapi-...`) into `DEFAULT_MODELS_API_KEY` when deploying. Create one for free at build.nvidia.com.
 2. Wait until all services are healthy (first deploy: a few minutes for image pulls and builds).
 3. Open the Frontend URL. The login is `AUTO_ONTOLOGY_ADMIN_EMAIL` (default `admin@example.com`) and `AUTO_ONTOLOGY_ADMIN_PASSWORD` (generated), both on Frontend → Variables. To use your own email, change it there and redeploy Frontend.
-4. On first boot, Ingestion registers the `chinook` connection, ingests it and compiles the semantic layer. This takes several minutes, depending on NVIDIA's rate limits. Check Settings → Semantic Compilation for the first successful run.
-5. Ask in Chat: "Which three countries had the highest invoice totals in 2024?" or "Which artists have the most tracks?"
+4. On first boot, Ingestion registers the `chinook` connection, ingests it and compiles the semantic layer (about 15 minutes in our test). Check Settings → Semantic Compilation for the first successful run. If the key was wrong or a model unavailable during that run, fix it, then use **Reset Semantic Layer** there: a failed run still counts as compiled.
+5. Ask in Chat: "Which artists have the most tracks?" A first answer took about 3 minutes in our test.
 
 Self-service sign-up is disabled, as it is upstream. Add people through Settings → SSO (redirect URI `https://{your-domain}/api/auth/sso/callback`), or as an admin through Better Auth's admin API. The admin password is re-applied on every start: rotate it by changing the variable and redeploying Frontend.
 
@@ -69,7 +69,7 @@ The template switches semantic compilation on at first boot so the sample works 
 
 **Models**
 
-All model settings live on Backend (Ingestion references them). Defaults: `nvidia/nemotron-nano-3-30b-a3b` for chat (upstream 1.1.0's `nvidia/nemotron-3-nano-30b-a3b` was retired on 2026-09-01 and returns HTTP 410), `nvidia/nemotron-3-embed-1b` for embeddings and `nvidia/llama-nemotron-rerank-vl-1b-v2` for reranking, all on NVIDIA's API catalog. `REASONING_*` and `NON_REASONING_*` accept any OpenAI-compatible endpoint (set `*_ENDPOINT`, `*_MODEL` and `*_API_KEY`). Embeddings and reranking expect NVIDIA NIM-compatible APIs, either hosted or self-hosted NIM. Keep the embedding model fixed after the first ingest; changing it needs a re-ingest. On HTTP 429/503, lower `LLM_MAX_INFLIGHT` (Backend) and `SEMANTIC_LLM_MAX_INFLIGHT` (Ingestion).
+All model settings live on Backend (Ingestion references them). Defaults: `nvidia/nemotron-3-ultra-550b-a55b` for chat (upstream 1.1.0's `nvidia/nemotron-3-nano-30b-a3b` was retired on 2026-09-01; the chat model must support structured output), `nvidia/nemotron-3-embed-1b` for embeddings and `nvidia/llama-nemotron-rerank-vl-1b-v2` for reranking, all on NVIDIA's API catalog. `REASONING_*` and `NON_REASONING_*` accept any OpenAI-compatible endpoint (set `*_ENDPOINT`, `*_MODEL` and `*_API_KEY`). Embeddings and reranking expect NVIDIA NIM-compatible APIs, either hosted or self-hosted NIM. Keep the embedding model fixed after the first ingest; changing it needs a re-ingest. NVIDIA enables models per account: `404 Function ... Not found for account` in the logs means pick another model from build.nvidia.com. On HTTP 429/503, lower `LLM_MAX_INFLIGHT` (Backend) and `SEMANTIC_LLM_MAX_INFLIGHT` (Ingestion).
 
 **Scaling**
 
